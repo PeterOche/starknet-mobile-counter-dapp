@@ -1,9 +1,9 @@
 class AppConstants {
-  // Using pre-deployed Sepolia Counter Contract
-  static const String contractAddress = '0x02d2a4804f83c34227314dba41d5c2f8a546a500d34e30bb5078fd36b5af2d77'; 
+  // Deployed Counter Contract on Sepolia
+  static const String contractAddress = '0x030397ff0ab89f249a0fbbfa378a4a2c8c1d91d660e153b15bfae84bfe990361'; 
   
-  // Sepolia Testnet RPC
-  static const String rpcUrl = 'https://starknet-sepolia.public.blastapi.io/rpc/v0_7';
+  // Sepolia Testnet RPC (Lava - Blast API is deprecated)
+  static const String rpcUrl = 'https://rpc.starknet-testnet.lava.build';
 
   // Privy Configuration
   static const String privyAppId = 'cmimr6t5301uljp0ccgj7j5b4';

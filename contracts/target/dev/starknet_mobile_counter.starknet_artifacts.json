@@ -1,1 +1,1 @@
-{"version":1,"contracts":[{"id":"ekhmrukmpb9kk","package_name":"starknet_mobile_counter","contract_name":"Counter","module_path":"starknet_mobile_counter::Counter","artifacts":{"sierra":"starknet_mobile_counter_Counter.contract_class.json","casm":null}}]}
+{"version":1,"contracts":[{"id":"ekhmrukmpb9kk","package_name":"starknet_mobile_counter","contract_name":"Counter","module_path":"starknet_mobile_counter::Counter","artifacts":{"sierra":"starknet_mobile_counter_Counter.contract_class.json","casm":"starknet_mobile_counter_Counter.compiled_contract_class.json"}}]}

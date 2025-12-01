@@ -1,8 +1,11 @@
 [package]
 name = "starknet_mobile_counter"
 version = "0.1.0"
+edition = "2023_11"
 
 [dependencies]
-starknet = "2.6.4"
+starknet = "2.9.0"
 
 [[target.starknet-contract]]
+sierra = true
+casm = true

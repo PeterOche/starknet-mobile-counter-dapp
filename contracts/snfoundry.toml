@@ -1,0 +1,4 @@
+[sncast.sepolia]
+account = "deployer"
+accounts-file = "accounts.json"
+url = "https://rpc.starknet-testnet.lava.build"
