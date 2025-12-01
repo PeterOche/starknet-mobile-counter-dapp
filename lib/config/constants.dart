@@ -2,7 +2,7 @@ class AppConstants {
   // Deployed Counter Contract on Sepolia
   static const String contractAddress = '0x030397ff0ab89f249a0fbbfa378a4a2c8c1d91d660e153b15bfae84bfe990361'; 
   
-  // Sepolia Testnet RPC (Lava - Blast API is deprecated)
+  // Sepolia Testnet RPC (Lava)
   static const String rpcUrl = 'https://rpc.starknet-testnet.lava.build';
 
   // Privy Configuration
