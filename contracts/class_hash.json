@@ -1,0 +1,8 @@
+{
+  "class_hash": "0x04163508eca596f199fbf9efb45355fa391142989f2310484baa066feb390ad0",
+  "contract_name": "Counter",
+  "contract_class_version": "0.1.0",
+  "calculated_at": "2024-12-01",
+  "method": "starkli class-hash"
+}
+

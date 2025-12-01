@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "variant": {
+    "type": "open_zeppelin",
+    "version": 1,
+    "public_key": "0x0",
+    "legacy": false,
+    "multisig": false
+  }
+}
