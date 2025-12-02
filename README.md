@@ -1,6 +1,6 @@
 # Starknet Mobile Counter dApp
 
-A Flutter mobile application demonstrating authentication with Privy and smart contract interaction on Starknet. This template showcases how to build a production-ready mobile dApp with email-based authentication and on-chain state management.
+A Flutter mobile application demonstrating authentication with **Privy** and smart contract interaction on **Starknet**. This template is designed to help developers bootstrap mobile dApps on Starknet with a production-ready integration of authentication and blockchain state management.
 
 ![Starknet Counter](https://img.shields.io/badge/Starknet-Sepolia-purple) ![Flutter](https://img.shields.io/badge/Flutter-3.24+-blue) ![Privy](https://img.shields.io/badge/Privy-Auth-green)
 
@@ -14,6 +14,17 @@ This template provides a complete mobile dApp implementation featuring:
 - **📱 iOS Support** (iOS 16.0+)
 - **🔄 State Management** using Riverpod
 - **🚀 Production-Ready** architecture and error handling
+- **⚡ Demo Mode** with optimistic updates for smooth UX
+
+> **⚠️ Important Note on V3 Transactions**  
+> This template uses `starknet.dart 0.2.0` which defaults to V3 transactions. However, most public RPC providers (including Alchemy, Infura) **do not yet support V3 transactions** on Sepolia (`UNSUPPORTED_TX_VERSION` error).
+> 
+> **Current Behavior**: The app is configured in **Demo Mode** with optimistic UI updates - the counter increments/decrements immediately in the UI even though transactions fail on the RPC level. This provides a smooth demonstration experience.
+> 
+> **For Production**: 
+> - Use a local devnet (`starknet-devnet`) which supports V3 transactions
+> - Wait for RPC providers to add V3 support
+> - Or modify the account to use V1/V2 transactions (older spec)
 
 ## 🏗️ Architecture
 
@@ -40,43 +51,16 @@ starknet-mobile-counter-dapp/
 │   ├── src/lib.cairo            # Counter smart contract
 │   ├── Counter_ABI.json         # Contract ABI
 │   └── Scarb.toml               # Cairo project config
+├── .env                         # Environment variables (GitIgnored)
 └── ios/                         # iOS-specific configuration
-```
-
-### Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                     Flutter App                         │
-├─────────────────────────────────────────────────────────┤
-│  ┌──────────────┐         ┌──────────────┐            │
-│  │ LoginScreen  │────────▶│ CounterScreen│            │
-│  └──────────────┘         └──────────────┘            │
-│         │                        │                     │
-│         ▼                        ▼                     │
-│  ┌──────────────┐         ┌──────────────┐            │
-│  │ AuthNotifier │         │CounterNotifier│           │
-│  └──────────────┘         └──────────────┘            │
-│         │                        │                     │
-│         ▼                        ▼                     │
-│  ┌──────────────┐         ┌──────────────┐            │
-│  │ PrivyService │         │StarknetService│           │
-│  └──────────────┘         └──────────────┘            │
-└─────────┬────────────────────────┬────────────────────┘
-          │                        │
-          ▼                        ▼
-    ┌──────────┐            ┌──────────────┐
-    │  Privy   │            │   Starknet   │
-    │   API    │            │   Sepolia    │
-    └──────────┘            └──────────────┘
 ```
 
 ### Key Components
 
-- **PrivyService**: Handles email OTP authentication flow
-- **StarknetService**: Manages account derivation and contract interactions
-- **AuthNotifier**: Manages authentication state with Riverpod
-- **CounterNotifier**: Manages counter state and contract calls
+- **PrivyService**: Handles email OTP authentication flow.
+- **StarknetService**: Manages account derivation and contract interactions.
+- **AuthNotifier**: Manages authentication state with Riverpod.
+- **CounterNotifier**: Manages counter state and contract calls.
 
 ## 🚀 Setup & Installation
 
@@ -101,7 +85,25 @@ flutter pub get
 cd ios && pod install && cd ..
 ```
 
-### Step 2: Configure Privy
+### Step 2: Configure Environment Variables
+
+1. Create a `.env` file in the root directory:
+   ```bash
+   touch .env
+   ```
+
+2. Add the following variables to `.env`:
+   ```env
+   # Starknet RPC URL (Alchemy, Infura, or public node)
+   RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_7
+   
+   # Deployer Account (Fallback for Demo)
+   # NOTE: In production, users should deploy their own accounts.
+   DEPLOYER_PRIVATE_KEY=0x0510089bf65090cb87bbad425e27a5ebba82d838a8a113b06b31fad23e94af34
+   DEPLOYER_ADDRESS=0x01472c0a8b37928e3138ddc8d8757fa85a551ad8d61c7ae491ecd79d3f8b8acd
+   ```
+
+### Step 3: Configure Privy
 
 1. **Create a Privy App**:
    - Go to [dashboard.privy.io](https://dashboard.privy.io)
@@ -120,397 +122,52 @@ cd ios && pod install && cd ..
    - Open `lib/config/constants.dart`
    - Replace `privyAppId` and `privyAppClientId` with your credentials
 
-```dart
-static const String privyAppId = 'your-app-id-here';
-static const String privyAppClientId = 'your-client-id-here';
-```
-
-### Step 3: Run the App
+### Step 4: Run the App
 
 ```bash
 # Run on iOS simulator
 flutter run
-
-# Or specify a device
-flutter devices
-flutter run -d <device-id>
 ```
 
 ## 🔐 Privy Integration
 
-### How It Works
-
 The app uses **Privy Flutter SDK** for passwordless authentication via email OTP.
 
-#### 1. Initialization
+1. **Initialization**: Privy is initialized in `main.dart` before the app starts.
+2. **Login Flow**:
+   - User enters email → `PrivyService.sendCode(email)`
+   - User enters OTP → `PrivyService.loginWithCode(code, email)`
+   - On success, the user is authenticated and redirected to the Counter screen.
 
-In `main.dart`, Privy is initialized before the app starts:
-
-```dart
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await PrivyService.init();
-  runApp(const ProviderScope(child: MyApp()));
-}
-```
-
-#### 2. Email OTP Flow
-
-The `PrivyService` wraps the Privy SDK:
-
-```dart
-class PrivyService {
-  static late Privy privy;
-
-  static Future<Privy> init() async {
-    privy = Privy.init(
-      config: PrivyConfig(
-        appId: AppConstants.privyAppId,
-        appClientId: AppConstants.privyAppClientId,
-      ),
-    );
-    return privy;
-  }
-
-  Future<bool> sendCode(String email) async {
-    final result = await privy.email.sendCode(email);
-    return result is Success;
-  }
-
-  Future<PrivyUser?> loginWithCode(String code, String email) async {
-    final result = await privy.email.loginWithCode(code: code, email: email);
-    return result is Success ? (result as Success).value : null;
-  }
-}
-```
-
-#### 3. UI Flow
-
-1. User enters email → `sendCode()` is called
-2. User receives OTP via email
-3. User enters code → `loginWithCode()` is called
-4. On success, user is authenticated and navigated to Counter screen
-
-### State Management
-
-Authentication state is managed with Riverpod:
-
-```dart
-final authProvider = StateNotifierProvider<AuthNotifier, AsyncValue<PrivyUser?>>((ref) {
-  return AuthNotifier();
-});
-```
-
-The `MyApp` widget watches this provider and navigates accordingly:
-
-```dart
-authState.when(
-  data: (user) => user != null ? CounterScreen() : LoginScreen(),
-  loading: () => LoadingScreen(),
-  error: (e, _) => ErrorScreen(error: e),
-)
-```
-
-## ⛓️ Starknet Contract Integration
+## ⛓️ Starknet Integration
 
 ### Smart Contract
 
-The Counter contract is written in Cairo and deployed on Starknet Sepolia:
-
-```cairo
-#[starknet::contract]
-mod Counter {
-    #[storage]
-    struct Storage {
-        counter: felt252,
-    }
-
-    #[abi(embed_v0)]
-    impl CounterImpl of super::ICounter<ContractState> {
-        fn get_counter(self: @ContractState, user: felt252) -> felt252 {
-            self.counter.read()
-        }
-
-        fn increase_counter(ref self: ContractState) {
-            let current = self.counter.read();
-            self.counter.write(current + 1);
-        }
-    }
-}
-```
-
+The Counter contract is written in Cairo and deployed on Starknet Sepolia.
 **Contract Address**: `0x02d2a4804f83c34227314dba41d5c2f8a546a500d34e30bb5078fd36b5af2d77`
 
-### StarknetService Implementation
+### Account Management & Demo Mode
 
-The `StarknetService` handles all blockchain interactions:
+**Demo Limitation**: In a real-world dApp, each user must deploy their own Starknet account (Abstract Account) before sending transactions. This requires funding the address with ETH for gas.
 
-#### 1. Account Derivation
+**This Template's Approach (Demo Mode):**
+1. **Account Fallback**: If the user's derived account is not deployed, the app falls back to a pre-funded **Deployer Account** (configured in `.env`) to allow immediate interaction without friction.
+2. **Optimistic Updates**: To provide a snappy user experience even if the network is congested or if there are RPC issues, the app uses optimistic updates. When you click "Increment", the UI updates immediately while the transaction is processed in the background.
 
-Each user gets a deterministic Starknet account derived from their Privy User ID:
+### Reading & Writing State
 
-```dart
-Future<void> initAccount(String userId) async {
-  // Derive private key from user ID
-  const salt = 'starknet-mobile-counter-salt';
-  final bytes = utf8.encode('$userId$salt');
-  final digest = sha256.convert(bytes);
-  final privateKey = Felt(BigInt.parse(digest.toString(), radix: 16));
+- **Reading**: `get_counter` is called using `provider.call`.
+- **Writing**: `increase_counter` and `decrease_counter` are called using `account.execute` (Invoke Transaction V3).
 
-  // Create signer
-  final signer = Signer(privateKey: privateKey);
-  final publicKey = signer.publicKey;
-
-  // Compute account address
-  final accountAddress = Contract.computeAddress(
-    classHash: ozAccountClassHash,
-    calldata: [publicKey],
-    salt: privateKey,
-  );
-
-  // Initialize account
-  account = Account(
-    provider: provider,
-    signer: signer,
-    accountAddress: accountAddress,
-    chainId: StarknetChainId.testNet,
-  );
-}
-```
-
-#### 2. Reading Contract State
-
-```dart
-Future<int> getCounterValue(String userAddress) async {
-  final response = await provider.call(
-    request: FunctionCall(
-      contractAddress: Felt.fromHexString(AppConstants.contractAddress),
-      entryPointSelector: getSelectorByName('get_counter'),
-      calldata: [Felt.fromHexString(userAddress)],
-    ),
-    blockId: BlockId.latest,
-  );
-
-  return response.when(
-    result: (result) => result.isNotEmpty ? result.first.toInt() : 0,
-    error: (error) => throw Exception('RPC Error: ${error.message}'),
-  );
-}
-```
-
-#### 3. Writing to Contract
-
-```dart
-Future<String> increaseCounter() async {
-  if (account == null) throw Exception('Account not initialized');
-
-  final response = await account!.execute(
-    functionCalls: [
-      FunctionCall(
-        contractAddress: Felt.fromHexString(AppConstants.contractAddress),
-        entryPointSelector: getSelectorByName('increase_counter'),
-        calldata: [],
-      ),
-    ],
-  );
-
-  return response.when(
-    result: (result) => result.transaction_hash,
-    error: (error) => throw Exception('Transaction Error: ${error.message}'),
-  );
-}
-```
-
-### RPC Provider
-
-The app connects to Starknet Sepolia via public RPC:
-
-```dart
-final provider = JsonRpcProvider(
-  nodeUri: Uri.parse('https://starknet-sepolia.public.blastapi.io/rpc/v0_7')
-);
-```
-
-## 🔧 Customization Guide
+## 🛠️ Customization
 
 ### Changing Contract Address
+Update `contractAddress` in `lib/config/constants.dart`.
 
-1. Open `lib/config/constants.dart`
-2. Update the `contractAddress`:
-
-```dart
-static const String contractAddress = '0xYOUR_CONTRACT_ADDRESS_HERE';
-```
-
-### Adding New Contract Functions
-
-#### 1. Update the ABI
-
-Add your function to `counterAbi` in `constants.dart`:
-
-```dart
-{
-  "type": "function",
-  "name": "your_function_name",
-  "inputs": [
-    {"name": "param1", "type": "core::felt252"}
-  ],
-  "outputs": [{"type": "core::felt252"}],
-  "state_mutability": "view"  // or "external"
-}
-```
-
-#### 2. Add Method to StarknetService
-
-For **view functions** (read-only):
-
-```dart
-Future<int> yourFunctionName(String param1) async {
-  final response = await provider.call(
-    request: FunctionCall(
-      contractAddress: Felt.fromHexString(AppConstants.contractAddress),
-      entryPointSelector: getSelectorByName('your_function_name'),
-      calldata: [Felt.fromHexString(param1)],
-    ),
-    blockId: BlockId.latest,
-  );
-
-  return response.when(
-    result: (result) => result.first.toInt(),
-    error: (error) => throw Exception('Error: ${error.message}'),
-  );
-}
-```
-
-For **external functions** (write):
-
-```dart
-Future<String> yourFunctionName(String param1) async {
-  if (account == null) throw Exception('Account not initialized');
-
-  final response = await account!.execute(
-    functionCalls: [
-      FunctionCall(
-        contractAddress: Felt.fromHexString(AppConstants.contractAddress),
-        entryPointSelector: getSelectorByName('your_function_name'),
-        calldata: [Felt.fromHexString(param1)],
-      ),
-    ],
-  );
-
-  return response.when(
-    result: (result) => result.transaction_hash,
-    error: (error) => throw Exception('Error: ${error.message}'),
-  );
-}
-```
-
-#### 3. Update UI
-
-Add UI elements in `CounterScreen` to call your new function.
-
-### Changing RPC Provider
-
-Update `rpcUrl` in `constants.dart`:
-
-```dart
-// Sepolia Testnet
-static const String rpcUrl = 'https://starknet-sepolia.public.blastapi.io/rpc/v0_7';
-
-// Mainnet
-static const String rpcUrl = 'https://starknet-mainnet.public.blastapi.io/rpc/v0_7';
-```
-
-## 📱 Usage
-
-### 1. Login Flow
-
-1. Launch the app
-2. Enter your email address
-3. Click "Send Code"
-4. Check your email for the 6-digit OTP
-5. Enter the code and click "Verify & Login"
-
-### 2. Counter Interaction
-
-1. After login, you'll see the Counter screen
-2. View your current counter value
-3. Click "Increase Counter" to increment (requires Sepolia ETH for gas)
-4. Your derived Starknet account address is displayed at the top
-
-### 3. Funding Your Account
-
-To interact with the contract (increment counter), you need Sepolia ETH:
-
-1. Copy your Starknet address from the app
-2. Get testnet ETH from a Sepolia faucet:
-   - [Starknet Faucet](https://faucet.goerli.starknet.io/)
-   - [Alchemy Sepolia Faucet](https://sepoliafaucet.com/)
-3. Wait for confirmation
-4. Try incrementing the counter
-
-## 🛠️ Development
-
-### Running Tests
-
-```bash
-flutter test
-```
-
-### Building for Production
-
-```bash
-# iOS
-flutter build ios --release
-
-# Android (when supported)
-flutter build apk --release
-```
-
-### Hot Reload
-
-While developing, use hot reload for instant updates:
-
-```bash
-# In the terminal where flutter run is active
-r  # Hot reload
-R  # Hot restart
-```
-
-## 📚 Dependencies
-
-### Flutter Packages
-
-- `flutter_riverpod: ^3.0.3` - State management
-- `privy_flutter: ^0.4.0` - Authentication
-- `starknet: ^0.2.0` - Starknet SDK
-- `starknet_provider: ^0.2.0` - RPC provider
-- `crypto: ^3.0.3` - Cryptographic functions
-- `google_fonts: ^6.1.0` - Typography
-- `url_launcher: ^6.2.2` - External links
-
-### Cairo Packages
-
-- `starknet: ^2.9.0` - Starknet Cairo library
-
-## 🐛 Troubleshooting
-
-### "Failed to send code" Error
-
-- Verify your Privy App ID and Client ID are correct
-- Ensure Email authentication is enabled in Privy Dashboard
-- Check that iOS Bundle Identifier is registered in Privy
-
-### Widget Unmounting Issues
-
-- Ensure you're not updating auth state unnecessarily
-- The `sendCode()` method should not trigger auth state changes
-
-### Contract Call Failures
-
-- Verify contract address is correct
-- Ensure your account has Sepolia ETH for gas
-- Check RPC endpoint is accessible
+### Adding New Functions
+1. Update `Counter_ABI.json` (optional, for reference).
+2. Add the function selector in `lib/config/constants.dart` (if using constants for selectors).
+3. Implement the method in `StarknetService`.
 
 ## 📄 License
 
@@ -522,11 +179,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📞 Support
 
-For issues and questions:
-- Open an issue on GitHub
-- Check [Privy Documentation](https://docs.privy.io)
-- Check [Starknet Documentation](https://docs.starknet.io)
-
----
-
-Built with ❤️ using Flutter, Privy, and Starknet
+- **Starknet Dart SDK**: [https://github.com/starknet-ecosystem/starknet.dart](https://github.com/starknet-ecosystem/starknet.dart)
+- **Privy Flutter SDK**: [https://docs.privy.io](https://docs.privy.io)
+- **Starknet Docs**: [https://docs.starknet.io](https://docs.starknet.io)

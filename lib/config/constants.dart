@@ -1,9 +1,9 @@
 class AppConstants {
+  // Sepolia Testnet RPC (Alchemy)
+  static const String rpcUrl = 'https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_7/rPzdKIV5McUxtVpUWxpWb';
+
   // Deployed Counter Contract on Sepolia
-  static const String contractAddress = '0x030397ff0ab89f249a0fbbfa378a4a2c8c1d91d660e153b15bfae84bfe990361'; 
-  
-  // Sepolia Testnet RPC (Lava)
-  static const String rpcUrl = 'https://rpc.starknet-testnet.lava.build';
+  static const String contractAddress = '0x030397ff0ab89f249a0fbbfa378a4a2c8c1d91d660e153b15bfae84bfe990361';
 
   // Privy Configuration
   static const String privyAppId = 'cmimr6t5301uljp0ccgj7j5b4';

@@ -1,4 +1,9 @@
 [sncast.sepolia]
 account = "deployer"
-accounts-file = "accounts.json"
-url = "https://rpc.starknet-testnet.lava.build"
+accounts-file = "./accounts.json"
+url = "https://api.cartridge.gg/x/starknet/sepolia"
+
+[sncast.devnet]
+account = "devnet_account"
+accounts-file = "./devnet_accounts.json"
+url = "http://localhost:5050"

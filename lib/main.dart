@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starknet_mobile_counter_dapp/config/theme.dart';
 import 'package:starknet_mobile_counter_dapp/features/auth/providers/auth_provider.dart';
@@ -11,6 +12,9 @@ void main() async {
   
   // Initialize Privy
   await PrivyService.init();
+  
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
 
   runApp(
     const ProviderScope(

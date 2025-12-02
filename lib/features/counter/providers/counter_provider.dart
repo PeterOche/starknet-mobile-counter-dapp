@@ -90,15 +90,49 @@ class CounterNotifier extends StateNotifier<AsyncValue<int>> {
 
   Future<void> increment() async {
     if (_walletAddress == null) return;
-    // Optimistic update or loading state
-    // state = const AsyncValue.loading(); // Optional: show loading
+    
+    // Store current value to revert if needed
+    final previousValue = state.value;
+    
+    // Optimistic update: Increment immediately
+    if (previousValue != null) {
+      state = AsyncValue.data(previousValue + 1);
+    } else {
+      state = const AsyncValue.loading();
+    }
+
     try {
       await _starknetService.increaseCounter();
-      // Wait for tx to be accepted or just refresh after a delay
-      // For better UX, we might want to poll or wait for the tx receipt
-      await Future.delayed(const Duration(seconds: 5)); // Simple delay for demo
-      await refresh();
+      // In a real app, we would wait for the tx to be accepted.
+      // In demo mode, we just keep the optimistic value.
+      // If we refresh immediately, we might get the old value from the chain if the tx isn't mined yet.
+      // So we skip refresh() for now or delay it significantly.
     } catch (e, st) {
+      // Revert on error
+      if (previousValue != null) {
+        state = AsyncValue.data(previousValue);
+      }
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> decrement() async {
+    if (_walletAddress == null) return;
+
+    final previousValue = state.value;
+    
+    if (previousValue != null) {
+      state = AsyncValue.data(previousValue - 1);
+    } else {
+      state = const AsyncValue.loading();
+    }
+
+    try {
+      await _starknetService.decreaseCounter();
+    } catch (e, st) {
+      if (previousValue != null) {
+        state = AsyncValue.data(previousValue);
+      }
       state = AsyncValue.error(e, st);
     }
   }

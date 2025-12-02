@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment variables
+.env
+
+# Contracts
+contracts/target/
+contracts/.venv/
+contracts/accounts.json
+contracts/devnet_accounts.json

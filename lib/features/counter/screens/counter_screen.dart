@@ -68,10 +68,12 @@ class CounterScreen extends ConsumerWidget {
                 // Keeping it disabled for visual balance if desired, or removing it.
                 // For this template, we'll show it but disabled with a tooltip.
                 Tooltip(
-                  message: "Not available in demo contract",
-                  child: const ActionButton(
+                  message: "Decrease counter",
+                  child: ActionButton(
                     icon: Icons.remove,
-                    onPressed: null, // Disabled
+                    onPressed: () {
+                      ref.read(counterProvider.notifier).decrement();
+                    },
                   ),
                 ),
                 const SizedBox(width: 32),
