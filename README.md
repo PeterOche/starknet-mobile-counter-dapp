@@ -99,8 +99,9 @@ cd ios && pod install && cd ..
    
    # Deployer Account (Fallback for Demo)
    # NOTE: In production, users should deploy their own accounts.
-   DEPLOYER_PRIVATE_KEY=0x0510089bf65090cb87bbad425e27a5ebba82d838a8a113b06b31fad23e94af34
-   DEPLOYER_ADDRESS=0x01472c0a8b37928e3138ddc8d8757fa85a551ad8d61c7ae491ecd79d3f8b8acd
+   # WARNING: Never commit real private keys to version control!
+   DEPLOYER_PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
+   DEPLOYER_ADDRESS=0xYOUR_ACCOUNT_ADDRESS_HERE
    ```
 
 ### Step 3: Configure Privy
