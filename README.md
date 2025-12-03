@@ -159,6 +159,145 @@ The Counter contract is written in Cairo and deployed on Starknet Sepolia.
 - **Reading**: `get_counter` is called using `provider.call`.
 - **Writing**: `increase_counter` and `decrease_counter` are called using `account.execute` (Invoke Transaction V3).
 
+## 🎬 Demo Flow
+
+This section walks through the complete user journey in the app, from authentication to interacting with the on-chain counter.
+
+### 1. **Login with Privy** 🔐
+
+**What happens:**
+- User opens the app and sees the login screen
+- User enters their email address
+- User receives a one-time password (OTP) code via email
+- User enters the OTP code to authenticate
+
+**Technical details:**
+- `LoginScreen` uses `PrivyService.sendCode(email)` to trigger the OTP email
+- After code entry, `PrivyService.loginWithCode(code, email)` authenticates the user
+- On success, `AuthNotifier` updates the authentication state with the `PrivyUser` object
+- The app automatically navigates to the Counter screen
+
+**Code reference:**
+- UI: [`lib/features/auth/screens/login_screen.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/auth/screens/login_screen.dart)
+- Service: [`lib/features/auth/services/privy_service.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/auth/services/privy_service.dart)
+- State: [`lib/features/auth/providers/auth_provider.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/auth/providers/auth_provider.dart)
+
+---
+
+### 2. **Account Initialization** ⛓️
+
+**What happens:**
+- Once authenticated, the app initializes a Starknet account for the user
+- The wallet address is displayed in the app bar
+
+**Technical details:**
+- `walletProvider` watches the authentication state
+- When a user is authenticated, `StarknetService.initAccount(userId)` is called
+- **Demo Mode**: The app uses a pre-funded deployer account (from `.env`) as a fallback to enable immediate interaction without requiring account deployment or funding
+- In production, you would derive a unique account from the user's Privy wallet and deploy it on-chain
+
+**Code reference:**
+- Service: [`lib/features/counter/services/starknet_service.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/counter/services/starknet_service.dart#L15-L39)
+- Provider: [`lib/features/counter/providers/counter_provider.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/counter/providers/counter_provider.dart#L11-L39)
+
+---
+
+### 3. **Counter Display** 📊
+
+**What happens:**
+- The counter screen displays the current count value
+- The UI shows the user's wallet address in the app bar
+- Two action buttons (+ and -) are available for interaction
+
+**Technical details:**
+- `CounterNotifier` automatically fetches the counter value on initialization
+- The counter is read using `StarknetService.getCounterValue(walletAddress)`
+- This calls the `get_counter(user)` function on the smart contract using `provider.call`
+- The counter value updates in real-time when transactions complete
+
+**Code reference:**
+- UI: [`lib/features/counter/screens/counter_screen.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/counter/screens/counter_screen.dart)
+- Service: [`lib/features/counter/services/starknet_service.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/counter/services/starknet_service.dart#L41-L65)
+- Provider: [`lib/features/counter/providers/counter_provider.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/counter/providers/counter_provider.dart#L80-L89)
+
+---
+
+### 4. **Increase Counter** ➕
+
+**What happens:**
+- User taps the **+** button
+- The counter value increments immediately in the UI (optimistic update)
+- A transaction is sent to the Starknet network in the background
+- If successful, the new value persists on-chain
+- If the transaction fails, the UI reverts to the previous value
+
+**Technical details:**
+- `CounterNotifier.increment()` performs an optimistic update first
+- Then calls `StarknetService.increaseCounter()`
+- This executes an invoke transaction using `account.execute()` with the `increase_counter` function selector
+- **Demo Mode**: If the transaction fails (e.g., due to V3 transaction incompatibility), the optimistic update remains for demonstration purposes
+- In production with V3 support, the transaction would be confirmed on-chain
+
+**Code reference:**
+- Provider: [`lib/features/counter/providers/counter_provider.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/counter/providers/counter_provider.dart#L91-L117)
+- Service: [`lib/features/counter/services/starknet_service.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/counter/services/starknet_service.dart#L101-L189)
+
+---
+
+### 5. **Decrease Counter** ➖
+
+**What happens:**
+- User taps the **-** button
+- The counter value decrements immediately in the UI (optimistic update)
+- A transaction is sent to the Starknet network in the background
+- Similar behavior to the increase flow
+
+**Technical details:**
+- `CounterNotifier.decrement()` performs an optimistic update
+- Calls `StarknetService.decreaseCounter()`
+- Uses the same transaction flow as increment but with the `decrease_counter` function selector
+
+**Code reference:**
+- Provider: [`lib/features/counter/providers/counter_provider.dart`](file:///Users/mustang/Desktop/starknet-mobile-counter-dapp/lib/features/counter/providers/counter_provider.dart#L119-L138)
+
+---
+
+### 6. **Logout** 🚪
+
+**What happens:**
+- User taps the logout button in the app bar
+- The app clears the authentication state and returns to the login screen
+
+**Technical details:**
+- `AuthNotifier.logout()` calls `PrivyService.logout()`
+- The authentication state is reset to `null`
+- The app automatically navigates back to the login screen
+
+---
+
+### Key Features Demonstrated
+
+✅ **Passwordless Authentication** - Email OTP via Privy  
+✅ **Starknet Account Management** - Account initialization and address derivation  
+✅ **Smart Contract Reads** - Fetching on-chain state with `provider.call`  
+✅ **Smart Contract Writes** - Sending transactions with `account.execute`  
+✅ **Optimistic UI Updates** - Immediate feedback for better UX  
+✅ **Error Handling** - Graceful fallbacks and user-friendly error messages  
+✅ **State Management** - Reactive UI with Riverpod providers  
+
+---
+
+### Testing the Flow
+
+1. **Run the app**: `flutter run`
+2. **Login**: Use any email address (Privy will send a real OTP)
+3. **View Counter**: See the current count for your wallet address
+4. **Increment**: Tap **+** and watch the optimistic update
+5. **Decrement**: Tap **-** to decrease the counter
+6. **Logout**: Tap the logout icon to end the session
+
+> **💡 Tip**: In Demo Mode, the counter updates immediately even if the blockchain transaction fails. For production with V3 transaction support, transactions will be confirmed on-chain before the UI updates permanently.
+
 ## 🛠️ Customization
 
 ### Changing Contract Address
